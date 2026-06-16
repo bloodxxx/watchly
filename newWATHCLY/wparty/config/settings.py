@@ -90,5 +90,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://watchly-production-ba56.up.railway.app').split(',')
+
 # X-Frame-Options: allow video embeds
 X_FRAME_OPTIONS = 'SAMEORIGIN'
