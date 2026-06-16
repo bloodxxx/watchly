@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация — CineSync{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="glass auth-card">
+    <h1 class="auth-title">Создать аккаунт</h1>
+    <p class="auth-sub">Уже есть аккаунт? <a href="{% url 'accounts:login' %}">Войти</a></p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% for err in field.errors %}<div class="form-error">{{ err }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      {% if form.non_field_errors %}
+        <div class="form-error" style="margin-bottom:14px;">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">Создать аккаунт</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

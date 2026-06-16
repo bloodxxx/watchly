@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Создать комнату — CineSync{% endblock %}
+
+{% block content %}
+<div class="create-page">
+  <div class="create-card">
+
+    <div class="create-header">
+      <h1 class="create-title">Новая комната</h1>
+      <p class="create-sub">Настрой параметры перед тем как пригласить друзей</p>
+    </div>
+
+    <form method="post" id="create-form">
+      {% csrf_token %}
+
+      <!-- Скрытые поля управляются JS-карточками -->
+      <input type="hidden" name="is_private"        id="f-is-private"        value="False">
+      <input type="hidden" name="max_participants"  id="f-max-participants"  value="8">
+      <input type="hidden" name="is_anonymous"      id="f-is-anonymous"      value="False">
+      <input type="hidden" name="chat_enabled"      id="f-chat-enabled"      value="True">
+      <input type="hidden" name="slow_mode"         id="f-slow-mode"         value="0">
+      <input type="hidden" name="host_only_video"   id="f-host-only-video"   value="False">
+
+      {% if form.non_field_errors %}
+        <div class="form-alert">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <!-- Название -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.name.id_for_label }}">Название комнаты</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
+      </div>
+
+      <!-- ═══════ 1. Доступ ═══════ -->
+      <div class="option-section">
+        <div class="option-section-label">Доступ</div>
+
+        <div class="opt-card" id="card-private" role="checkbox" aria-checked="false" tabindex="0" data-toggle="private">
+          <div class="opt-card-icon">
+            <svg class="duotone-icon" viewBox="0 0 24 24">
+              <path class="dt-fill"   d="M5 11h14v9H5z"/>
+              <path class="dt-stroke" d="M8 11V7a4 4 0 0 1 8 0v4M5 11h14v9H5z"/>
+            </svg>
+          </div>
+          <div class="opt-card-body">
+            <div class="opt-card-title">Приватная комната</div>
+            <div class="opt-card-desc">Вход по паролю</div>
+          </div>
+          <div class="opt-card-toggle"><span class="opt-card-toggle-knob"></span></div>
+        </div>
+
+        <div id="password-fields" class="password-fields" style="display:none;">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Пароль</label>
+            {{ form.password }}
+            {% if form.password.errors %}<div class="form-error">{{ form.password.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Повторите пароль</label>
+            {{ form.password_confirm }}
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 2. Размер комнаты ═══════ -->
+      <div class="option-section">
+        <div class="option-section-label">Размер комнаты</div>
+        <div class="opt-cards-row" id="size-grid">
+
+          <div class="opt-card opt-radio" role="radio" aria-checked="false" tabindex="0" data-size="3">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="12" cy="8" r="4"/>
+                <path  class="dt-stroke" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 21a7 7 0 0 1 14 0"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Маленькая</div>
+              <div class="opt-card-desc">До 3 человек</div>
+            </div>
+          </div>
+
+          <div class="opt-card opt-radio" role="radio" aria-checked="false" tabindex="0" data-size="6">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="9" cy="9" r="3"/>
+                <circle class="dt-fill" cx="17" cy="10" r="2.5"/>
+                <path class="dt-stroke" d="M9 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20a6 6 0 0 1 12 0M17 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM15 18.5a4 4 0 0 1 7 0"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Средняя</div>
+              <div class="opt-card-desc">До 6 человек</div>
+            </div>
+          </div>
+
+          <div class="opt-card opt-radio is-on" role="radio" aria-checked="true" tabindex="0" data-size="8">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="9" cy="9" r="3"/>
+                <circle class="dt-fill" cx="17" cy="9" r="2.5"/>
+                <path class="dt-stroke" d="M9 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20a6 6 0 0 1 12 0M17 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM15 18a4 4 0 0 1 6.5-1.5"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Стандарт</div>
+              <div class="opt-card-desc">До 8 человек</div>
+            </div>
+          </div>
+
+          <div class="opt-card opt-radio" role="radio" aria-checked="false" tabindex="0" data-size="12">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <path class="dt-fill"   d="M3 9l4 9h10l4-9-5 3-4-6-4 6z"/>
+                <path class="dt-stroke" d="M3 9l4 10h10l4-10-5 3-4-6-4 6L3 9zM3 21h18"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Большая</div>
+              <div class="opt-card-desc">До 12 человек</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════ 3. Возможности ═══════ -->
+      <div class="option-section">
+        <div class="option-section-label">Возможности</div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+
+          <!-- Чат — по умолчанию ВКЛ -->
+          <div class="opt-card is-on" role="checkbox" aria-checked="true" tabindex="0" data-toggle="chat">
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <path class="dt-fill"   d="M3 5h18v11H8l-5 4z"/>
+                <path class="dt-stroke" d="M3 5h18v11H8l-5 4V5z"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Чат</div>
+              <div class="opt-card-desc">Сообщения в комнате</div>
+            </div>
+            <div class="opt-card-toggle"><span class="opt-card-toggle-knob"></span></div>
+          </div>
+
+          <!-- Анонимный режим -->
+          <div class="opt-card" role="checkbox" aria-checked="false" tabindex="0" data-toggle="anon">
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <path class="dt-fill"   d="M4 8c2-3 5-3 8-3s6 0 8 3c-1 5-3 8-8 8s-7-3-8-8z"/>
+                <path class="dt-stroke" d="M4 8c2-3 5-3 8-3s6 0 8 3c-1 5-3 8-8 8s-7-3-8-8zM9 10h.01M15 10h.01"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Анонимный режим</div>
+              <div class="opt-card-desc">Имена скрыты</div>
+            </div>
+            <div class="opt-card-toggle"><span class="opt-card-toggle-knob"></span></div>
+          </div>
+
+          <!-- Только хост управляет видео -->
+          <div class="opt-card" role="checkbox" aria-checked="false" tabindex="0" data-toggle="host-video">
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <path class="dt-fill"   d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/>
+                <path class="dt-stroke" d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zM10 8l6 4-6 4V8z"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Только хост управляет видео</div>
+              <div class="opt-card-desc">Участники не могут менять видео</div>
+            </div>
+            <div class="opt-card-toggle"><span class="opt-card-toggle-knob"></span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══════ 4. Медленный режим ═══════ -->
+      <div class="option-section">
+        <div class="option-section-label">Медленный режим чата</div>
+        <div class="opt-cards-row" id="slow-grid">
+
+          <div class="opt-card opt-radio is-on" role="radio" aria-checked="true" tabindex="0" data-slow="0">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="12" cy="12" r="9"/>
+                <path class="dt-stroke" d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zM12 7v5l3 3"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Выкл</div>
+              <div class="opt-card-desc">0 сек</div>
+            </div>
+          </div>
+
+          <div class="opt-card opt-radio" role="radio" aria-checked="false" tabindex="0" data-slow="5">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="12" cy="12" r="9"/>
+                <path class="dt-stroke" d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zM12 7v5l3 3"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Медленно</div>
+              <div class="opt-card-desc">5 сек</div>
+            </div>
+          </div>
+
+          <div class="opt-card opt-radio" role="radio" aria-checked="false" tabindex="0" data-slow="10">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="12" cy="12" r="9"/>
+                <path class="dt-stroke" d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zM12 7v5l3 3"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Умеренно</div>
+              <div class="opt-card-desc">10 сек</div>
+            </div>
+          </div>
+
+          <div class="opt-card opt-radio" role="radio" aria-checked="false" tabindex="0" data-slow="15">
+            <div class="opt-radio-check"></div>
+            <div class="opt-card-icon">
+              <svg class="duotone-icon" viewBox="0 0 24 24">
+                <circle class="dt-fill" cx="12" cy="12" r="9"/>
+                <path class="dt-stroke" d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3zM12 7v5l3 3"/>
+              </svg>
+            </div>
+            <div class="opt-card-body">
+              <div class="opt-card-title">Медленнее</div>
+              <div class="opt-card-desc">15 сек</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-full">Создать комнату</button>
+        <a href="/" class="btn btn-secondary btn-full">Отмена</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Тактильная отдача (мобильные)
+  function haptic() {
+    try { if (navigator.vibrate) navigator.vibrate(8); } catch (_) {}
+  }
+  // Лучик света при клике
+  function flash(card) {
+    card.classList.remove('flash');
+    void card.offsetWidth; // reflow
+    card.classList.add('flash');
+    setTimeout(() => card.classList.remove('flash'), 800);
+  }
+
+  // ─── Универсальный toggle ───
+  function attachToggle(card, hiddenInput, onChange) {
+    function toggle() {
+      const active = card.classList.toggle('is-on');
+      card.setAttribute('aria-checked', String(active));
+      if (hiddenInput) hiddenInput.value = active ? 'True' : 'False';
+      flash(card);
+      haptic();
+      if (onChange) onChange(active);
+    }
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+    });
+  }
+
+  // ─── Приватная комната ───
+  const cardPrivate = document.querySelector('[data-toggle="private"]');
+  const fIsPrivate  = document.getElementById('f-is-private');
+  const pwdFields   = document.getElementById('password-fields');
+  attachToggle(cardPrivate, fIsPrivate, on => {
+    pwdFields.style.display = on ? 'block' : 'none';
+  });
+
+  // ─── Чат / Анон / Хост-видео ───
+  attachToggle(document.querySelector('[data-toggle="chat"]'),       document.getElementById('f-chat-enabled'));
+  attachToggle(document.querySelector('[data-toggle="anon"]'),       document.getElementById('f-is-anonymous'));
+  attachToggle(document.querySelector('[data-toggle="host-video"]'), document.getElementById('f-host-only-video'));
+
+  // ─── Радио: размер комнаты ───
+  const fMaxP    = document.getElementById('f-max-participants');
+  const sizeGrid = document.getElementById('size-grid');
+  function selectSize(card) {
+    sizeGrid.querySelectorAll('.opt-radio').forEach(c => {
+      c.classList.remove('is-on');
+      c.setAttribute('aria-checked', 'false');
+    });
+    card.classList.add('is-on');
+    card.setAttribute('aria-checked', 'true');
+    fMaxP.value = card.dataset.size;
+    flash(card);
+    haptic();
+  }
+  sizeGrid.querySelectorAll('.opt-radio').forEach(card => {
+    card.addEventListener('click', () => selectSize(card));
+    card.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); selectSize(card); }
+    });
+  });
+
+  // ─── Радио: slow mode ───
+  const fSlowMode = document.getElementById('f-slow-mode');
+  const slowGrid  = document.getElementById('slow-grid');
+  function selectSlow(card) {
+    slowGrid.querySelectorAll('.opt-radio').forEach(c => {
+      c.classList.remove('is-on');
+      c.setAttribute('aria-checked', 'false');
+    });
+    card.classList.add('is-on');
+    card.setAttribute('aria-checked', 'true');
+    fSlowMode.value = card.dataset.slow;
+    flash(card);
+    haptic();
+  }
+  slowGrid.querySelectorAll('.opt-radio').forEach(card => {
+    card.addEventListener('click', () => selectSlow(card));
+    card.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); selectSlow(card); }
+    });
+  });
+})();
+</script>
+{% endblock %}

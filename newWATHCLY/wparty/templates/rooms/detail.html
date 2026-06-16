@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ room.name }} — Watchly{% endblock %}
+
+{% block content %}
+
+<!-- ═══ Host Transition (только хост при создании комнаты) ═══ -->
+<div class="ht-overlay" id="ht-overlay" style="display:none;" aria-hidden="true">
+
+  <!-- Верхняя панель -->
+  <div class="ht-panel ht-panel-top" id="ht-top"></div>
+
+  <!-- Золотой шов -->
+  <div class="ht-seam" id="ht-seam">
+    <div class="ht-seam-line"><span class="ht-seam-diamond">◆</span></div>
+  </div>
+
+  <!-- Нижняя панель -->
+  <div class="ht-panel ht-panel-bot" id="ht-bot"></div>
+
+  <!-- Контент посередине -->
+  <div class="ht-content" id="ht-content">
+    {% if user == room.host %}<div class="ht-eyebrow">Комната создана</div>{% endif %}
+    <div class="ht-title" id="ht-title">{{ room.name }}</div>
+    <div class="ht-code"># {{ room.code }}</div>
+    <div class="ht-particles" id="ht-particles"></div>
+  </div>
+
+</div>
+
+<div class="room-layout">
+
+  <!-- LEFT: Main area -->
+  <div class="room-main">
+
+    <!-- Room header -->
+    <div class="room-header">
+      <div>
+        <div class="room-title">{{ room.name }}</div>
+        <div class="room-code"># {{ room.code }}</div>
+      </div>
+      <div class="room-actions">
+        <button class="copy-link-btn" onclick="copyInviteLink()" title="Скопировать ссылку">
+          🔗 Пригласить
+        </button>
+        <a href="/" class="btn btn-ghost btn-sm">← Выйти</a>
+      </div>
+    </div>
+
+    <!-- Video area -->
+    <div class="video-area" id="video-area">
+      <!-- Оверлей сессии -->
+      <div class="session-overlay" id="session-overlay">
+        <div class="session-overlay-spinner" id="overlay-spinner" style="display:none;"></div>
+        <div class="session-overlay-text" id="overlay-text">Ожидание видео</div>
+        <div class="session-overlay-sub" id="overlay-subtext">
+          {% if user == room.host %}
+            Вставьте ссылку на видео ниже
+          {% else %}
+            Хост ещё не выбрал видео
+          {% endif %}
+        </div>
+        {% if user == room.host %}
+        <div class="session-overlay-hint">Вы — хост этой комнаты</div>
+        <!-- Прогресс готовности (только хост) -->
+        <div class="ready-bar" id="ready-bar" style="display:none;">
+          <span class="ready-bar-label">Готовы:</span>
+          <span id="ready-count">0</span>
+          <span class="ready-bar-sep">/</span>
+          <span id="ready-total">1</span>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if room.current_embed_url %}
+        <iframe id="video-iframe"
+          src="{{ room.current_embed_url }}"
+          frameborder="0"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      {% endif %}
+    </div>
+
+    <!-- URL bar (только для хоста, скрываем через JS для участников) -->
+    <div class="url-bar" id="url-bar">
+      <input
+        type="url"
+        id="video-url-input"
+        class="url-input"
+        placeholder="Вставь ссылку YouTube, VK Видео или RuTube..."
+        value="{{ room.current_video_url }}"
+      >
+      <button class="btn btn-primary btn-sm" id="load-video-btn">Загрузить</button>
+      <label class="btn btn-ghost btn-sm" id="upload-video-label" title="Загрузить файл с компьютера" style="cursor:pointer;margin-left:2px;">
+        📁
+        <input type="file" id="video-file-input" accept=".mp4,.webm,.mkv,.avi,.mov,video/*" style="display:none;">
+      </label>
+      <div class="url-error" id="url-error"></div>
+    </div>
+    {% if user == room.host %}
+    <div class="upload-progress" id="upload-progress" style="display:none;">
+      <div class="upload-progress-bar" id="upload-progress-bar" style="width:0%"></div>
+      <span class="upload-progress-text" id="upload-progress-text">Загрузка...</span>
+    </div>
+    {% endif %}
+
+    {% if user == room.host %}
+    <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+      <button class="btn btn-danger btn-sm" id="btn-end-session" title="Завершить сессию для всех">⏹ Завершить сессию</button>
+    </div>
+    {% endif %}
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="ctrl-btn ctrl-play" id="btn-play" title="Воспроизвести / Пауза">▶</button>
+      <div class="ctrl-sep"></div>
+      <span class="ctrl-time" id="time-display">0:00</span>
+      <input type="range" id="seek-bar" class="seek-bar" min="0" max="100" value="0" step="1">
+      <span class="ctrl-time" id="duration-display">0:00</span>
+      <div class="ctrl-sep"></div>
+      {% if user != room.host %}
+      <button class="ctrl-btn ctrl-sync" id="btn-sync" data-tooltip="Синхронизироваться с хостом" aria-label="Синхронизироваться с хостом">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+          <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+        </svg>
+      </button>
+      <div class="ctrl-sep"></div>
+      {% endif %}
+      <div class="sync-indicator">
+        <div class="sync-dot" id="ws-dot"></div>
+        <span id="ws-status">Подключение...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Sidebar -->
+  <div class="room-sidebar">
+
+    <!-- Participants -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">
+        Участники
+        <span class="sidebar-count" id="participants-count">0</span>
+        <span class="sidebar-limit">/ 8</span>
+      </div>
+      <div class="participants-list" id="participants-list"></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-section" id="chat-section">
+      <div class="sidebar-title">Чат</div>
+      {% if room.chat_enabled %}
+      <div class="chat-messages" id="chat-messages">
+        {% for msg in chat_messages %}
+        <div class="chat-msg">
+          <div class="chat-msg-avatar">
+            {% if msg.user.profile.avatar %}
+              <img src="{{ msg.user.profile.avatar.url }}" alt="">
+            {% else %}
+              {{ msg.user.username|first|upper }}
+            {% endif %}
+          </div>
+          <div class="chat-msg-body">
+            <div class="chat-msg-name">{{ msg.user.username }}</div>
+            <div class="chat-msg-text">{{ msg.text }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">Начни общение 👋</div>
+        {% endfor %}
+      </div>
+      <div class="chat-input-area">
+        <textarea
+          class="chat-input"
+          id="chat-input"
+          placeholder="Напиши сообщение..."
+          rows="1"
+          maxlength="500"
+        ></textarea>
+        <button class="chat-send" id="chat-send-btn" title="Отправить">➤</button>
+      </div>
+      {% if room.slow_mode > 0 %}
+      <div class="slow-mode-bar" id="slow-mode-bar" style="display:none;">
+        <span class="slow-mode-label">Следующее сообщение через</span>
+        <span class="slow-mode-timer" id="slow-mode-timer">{{ room.slow_mode }}</span>
+        <span class="slow-mode-label">сек</span>
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="chat-disabled-msg">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.35;color:var(--text-dim)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+        <span>Чат отключён</span>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const ROOM_CODE         = "{{ room.code }}";
+  const CURRENT_USER      = "{{ user.username }}";
+  const ROOM_HOST         = "{{ room.host.username }}";
+  const CSRF_TOKEN        = "{{ csrf_token }}";
+  const SET_VIDEO_URL     = "{% url 'rooms:set_video' room.code %}";
+  const UPLOAD_VIDEO_URL  = "{% url 'rooms:upload_video' room.code %}";
+  const DELETE_ROOM_URL   = "{% url 'rooms:delete_room' room.code %}";
+  const IS_ANONYMOUS      = {{ room.is_anonymous|yesno:"true,false" }};
+  const CHAT_ENABLED      = {{ room.chat_enabled|yesno:"true,false" }};
+  const SLOW_MODE         = {{ room.slow_mode }};
+  const HOST_ONLY_VIDEO   = {{ room.host_only_video|yesno:"true,false" }};
+  const SHOW_INTRO        = {{ show_intro|yesno:"true,false" }};
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   Host Transition — «Золотая завеса»
+   Только хост при создании комнаты (SHOW_INTRO = true).
+   Таймлайн ~5 секунд:
+     0ms      — оверлей виден, панели закрыты, шов невидим
+     200ms    — шов загорается (золотая линия)
+     700ms    — контент появляется (fade + translateY)
+     1200ms   — луч по названию
+     2400ms   — панели расходятся (верх ↑, низ ↓), частицы
+     3600ms   — панели ушли, контент гаснет
+     4200ms   — весь оверлей гаснет
+     4700ms   — скрыть
+   ═══════════════════════════════════════════════════ */
+(function () {
+  if (!SHOW_INTRO) return;
+
+  var ov      = document.getElementById('ht-overlay');
+  var top     = document.getElementById('ht-top');
+  var bot     = document.getElementById('ht-bot');
+  var seam    = document.getElementById('ht-seam');
+  var content = document.getElementById('ht-content');
+  var title   = document.getElementById('ht-title');
+  var ptc     = document.getElementById('ht-particles');
+
+  if (!ov) return;
+
+  /* ── Создаём золотые частицы ── */
+  var PARTICLE_COUNT = 18;
+  for (var i = 0; i < PARTICLE_COUNT; i++) {
+    var p = document.createElement('span');
+    p.className = 'ht-particle';
+    p.style.cssText = [
+      'left:'   + (Math.random() * 100) + '%',
+      'top:'    + (Math.random() * 100) + '%',
+      'width:'  + (2 + Math.random() * 3) + 'px',
+      'height:' + (2 + Math.random() * 3) + 'px',
+      'animation-delay:' + (Math.random() * 0.8) + 's',
+      'animation-duration:' + (1.2 + Math.random() * 1.4) + 's'
+    ].join(';');
+    ptc.appendChild(p);
+  }
+
+  /* ── Показываем ── */
+  ov.style.display = 'flex';
+
+  /* 1600ms — орнамент появляется */
+  setTimeout(function() { seam.classList.add('ht-seam-on'); }, 1600);
+
+  /* 2100ms — контент появляется */
+  setTimeout(function() { content.classList.add('ht-content-on'); }, 2100);
+
+  /* 2600ms — луч по названию */
+  setTimeout(function() { if (title) title.classList.add('ht-shine'); }, 2600);
+
+  /* 3800ms — частицы, затем панели расходятся */
+  setTimeout(function() {
+    if (ptc) ptc.classList.add('ht-particles-on');
+    setTimeout(function() {
+      top.classList.add('ht-panel-open');
+      bot.classList.add('ht-panel-open');
+      seam.classList.add('ht-seam-open');
+    }, 180);
+  }, 3800);
+
+  /* 5000ms — контент гаснет */
+  setTimeout(function() { content.classList.add('ht-content-out'); }, 5000);
+
+  /* 5600ms — весь оверлей гаснет */
+  setTimeout(function() {
+    ov.style.transition = 'opacity 0.55s ease';
+    ov.style.opacity = '0';
+  }, 5600);
+
+  /* 6200ms — убрать */
+  setTimeout(function() {
+    ov.style.display = 'none';
+    ov.style.opacity = '';
+  }, 6200);
+})();
+</script>
+<script src="{% static 'js/room.js' %}"></script>
+{% endblock %}

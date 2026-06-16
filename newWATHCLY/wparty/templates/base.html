@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Watchly{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/" class="navbar-logo">Watchly</a>
+      <div class="navbar-nav">
+        {% if user.is_authenticated %}
+          <a href="{% url 'rooms:create' %}" class="btn-nav-accent btn">+ Создать сессию</a>
+          <a href="{% url 'accounts:profile' %}" style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;transition:var(--transition);">
+            <div class="nav-avatar">
+              {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="avatar">
+              {% else %}
+                {{ user.username|first|upper }}
+              {% endif %}
+            </div>
+            <span style="font-size:0.9rem;font-weight:600;color:var(--text-muted);">{{ user.username }}</span>
+          </a>
+          <a href="{% url 'accounts:logout' %}" class="btn btn-ghost btn-sm">Выйти</a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-secondary btn-sm">Войти</a>
+          <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Регистрация</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Toast messages -->
+  {% if messages %}
+  <div class="messages-container">
+    {% for msg in messages %}
+    <div class="message-toast {{ msg.tags }}">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  <script>
+    setTimeout(() => {
+      document.querySelectorAll('.message-toast').forEach(el => {
+        el.style.opacity = '0'; el.style.transition = '0.4s';
+        setTimeout(() => el.remove(), 400);
+      });
+    }, 3500);
+  </script>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
